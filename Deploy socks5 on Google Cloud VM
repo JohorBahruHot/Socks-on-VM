@@ -1,0 +1,77 @@
+Deploy socks5 on Google Cloud VM
+
+1. SSH to VM
+sudo su
+sudo dnf update -y
+
+2.
+sudo dnf install -y gcc make pam-devel openldap-devel wget
+# 下载 ss5 的源码
+wget http://sourceforge.net/projects/ss5/files/ss5/3.8.9-8/ss5-3.8.9-8.tar.gz
+
+# 解压缩下载的文件
+tar -xvzf ss5-3.8.9-8.tar.gz
+
+# 进入 ss5 目录
+cd ss5-3.8.9
+
+3. # 配置并编译安装
+./configure
+make
+sudo make install
+
+4.
+sudo vi /etc/opt/ss5/ss5.conf
+==============
+找到以下两行并取消注释（删除前面的#）以允许匿名用户使用 SOCKS5 代理：
+#auth    0.0.0.0/0               -               -
+#permit  0.0.0.0/0               -               0.0.0.0/0       -       -       -       -
+
+更新后应为:
+auth    0.0.0.0/0               -               -
+permit  0.0.0.0/0               -               0.0.0.0/0       -       -       -       -
+
+5. 配置端口和地址
+默认情况下，ss5 监听在 1080 端口。你可以在 /etc/opt/ss5/ss5.conf 文件中找到 bind 配置项，确认它监听的是正确的地址和端口。如果你想改变端口号，可以在这个配置文件中进行修改。
+
+6. 配置防火墙
+确保 GCP 的防火墙允许你的代理端口（通常是1080）通过。你可以使用以下命令开放端口：
+sudo firewall-cmd --permanent --add-port=1080/tcp
+sudo firewall-cmd --reload
+
+7. 启动 SS5 服务
+现在，你可以启动 ss5 服务：
+
+bash
+Copy code
+sudo ss5 -t
+要使其在系统启动时自动启动，可以执行：
+
+bash
+Copy code
+sudo systemctl enable ss5
+8. 使用代理
+现在，你可以在本地应用程序中设置 SOCKS5 代理，指向你的 GCP 实例的外部 IP 地址和你配置的端口（如1080）。
+
+例如，如果你的 GCP 实例的外部 IP 是 34.123.45.67，你可以在应用中设置 SOCKS5 代理为 34.123.45.67:1080。
+
+9. 可选：添加用户名和密码认证
+为了增强安全性，你可以在 /etc/opt/ss5/ss5.passwd 文件中添加用户名和密码认证：
+
+bash
+Copy code
+sudo vi /etc/opt/ss5/ss5.passwd
+添加格式如下：
+
+plaintext
+Copy code
+username password
+并在 ss5.conf 中将 auth 行修改为：
+
+plaintext
+Copy code
+auth 0.0.0.0/0 - u
+保存后重启 ss5 服务。
+
+10. 结束
+通过这些步骤，你应该已经成功在 GCP 的 CentOS 9 上配置了一个 SOCKS5 代理。现在可以将本地应用指向该代理以实现代理访问互联网。

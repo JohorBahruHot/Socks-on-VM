@@ -1,4 +1,4 @@
-Deploy socks5 on Google Cloud VM
+Deploy socks5 on Centos 9 Google Cloud VM
 
 1. SSH to VM
 sudo su
